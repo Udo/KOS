@@ -37,9 +37,10 @@ WAIT 3.
 
 // *** init de-orbit burn ***
 PRINT "RETRO BURN...".
+SET SASMODE TO "STABILITY".
 UNTIL SHIP:SURFACESPEED < VDEORBIT {
   LOCK THROTTLE TO 1.
-  WAIT 1.
+  WAIT 0.1.
 } 
 
 // *** going into descent mode ***
@@ -50,7 +51,6 @@ LOCK THROTTLE TO T.
 WAIT 3.
 
 // *** descent control loop ***
-SET SASMODE TO "STABILITY".
 SET MODE TO "". SET LMODE TO "".
 
 UNTIL ALT:RADAR < ALTOFFSET {
