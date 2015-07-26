@@ -1,6 +1,6 @@
 // GENERIC KSP PROBE LANDER SCRIPT
 // land(ALTOFFSET, VDEORBIT, ALTLANDING)
-// 
+//
 // ALTOFFSET - how high the altimeter is off the ground from the base of the probe
 // VDEORBIT - de-orbit with this velocity
 // ALTLANDING - radar altitude to trigger last phase of landing
@@ -22,6 +22,13 @@ PRINT "^   BRAKING MODE AT: " + ALTBRAKING + " m".
 
 // *** de-orbit systems prep and orientation change ***
 IF( STAGE:READY ) STAGE.
+SAS OFF.
+// make sure landing gear is retracted
+GEAR OFF.
+// retract solar panels for landing
+PANELS OFF.
+WAIT 1.
+
 // retrograde orientation by SAS introduces inaccuracies and latencies
 // that are inacceptable for landing in low-grav (like Minmus), hence
 // we need to lock steering directly to the inverse of our movement vector:
@@ -29,19 +36,17 @@ LOCK STEERING TO (-1) * SHIP:VELOCITY:SURFACE.
 // using minimal thrust to accelerate orientation change in craft with
 // underpowered reaction wheels:
 LOCK THROTTLE TO 0.1.
-// make sure landing gear is retracted 
-GEAR OFF.
-// retract solar panels for landing
-PANELS OFF.
 WAIT 3.
 
 // *** init de-orbit burn ***
 PRINT "RETRO BURN...".
+SAS ON.
+WAIT 0.1.
 SET SASMODE TO "STABILITY".
 UNTIL SHIP:SURFACESPEED < VDEORBIT {
   LOCK THROTTLE TO 1.
   WAIT 0.1.
-} 
+}
 
 // *** going into descent mode ***
 PRINT "DESCENDING...".
@@ -54,55 +59,56 @@ WAIT 3.
 SET MODE TO "". SET LMODE TO "".
 
 UNTIL ALT:RADAR < ALTOFFSET {
- 
+
   SET DV TO 0.
-  IF( ALT:RADAR < ALTLANDING ) { 
+  IF( ALT:RADAR < ALTLANDING ) {
     // "hovering" landing mode, precise thrust control
     SET MODE TO "LANDING".
     SET MAXLANDINGSPEED TO SQRT(MAX(0.1, ALT:RADAR - ALTOFFSET)).
-	SET DV TO MAX(0, SHIP:SURFACESPEED - MAXLANDINGSPEED).
-  } ELSE IF( ALT:RADAR < ALTBRAKING ) { 
+        SET DV TO MAX(0, SHIP:SURFACESPEED - MAXLANDINGSPEED).
+  } ELSE IF( ALT:RADAR < ALTBRAKING ) {
     // braking mode is for general speed control prior to landing
-	SET MODE TO "BRAKING".
+        SET MODE TO "BRAKING".
     SET MAXLANDINGSPEED TO ALT:RADAR / 25.
-	SET DV TO MAX(0, SHIP:SURFACESPEED - MAXLANDINGSPEED).
+        SET DV TO MAX(0, SHIP:SURFACESPEED - MAXLANDINGSPEED).
   }
   ELSE {
-	SET MODE TO "STAND-BY".
+        SET MODE TO "STAND-BY".
   }
-  
+
   IF( LMODE <> MODE ) {
     PRINT MODE + " MODE (DV:" + ROUND(DV) + " m/s)".
-	SET LMODE TO MODE.
+        SET LMODE TO MODE.
   }
 
   IF( DV > 0 ) {
-	// controls tightness of thrust adjustment with SQRT
-    SET T TO MIN(1, SQRT(DV)/5). 
-  } 
+        // controls tightness of thrust adjustment with SQRT
+    SET T TO MIN(1, SQRT(DV)/5).
+  }
   ELSE {
     // smooth power-down
-    SET T TO MAX(0, T - 0.01). 
+    SET T TO MAX(0, T - 0.01).
   }
-  
+
   IF( ALT:RADAR < 20 ) {
     // prepare for touch down
-	GEAR ON.
+        GEAR ON.
   }
 
   WAIT 0.001.
-  
+
 }
 
 PRINT "TOUCH DOWN.".
-LOCK THROTTLE TO 0.01.
+LOCK THROTTLE TO 0.
 LOCK STEERING TO UP.
 WAIT 2.
 
 PRINT "LANDING COMPLETE.".
 UNLOCK STEERING.
-LOCK THROTTLE TO 0.
 PANELS ON.
 WAIT 1.
 
 SAS OFF.
+
+
