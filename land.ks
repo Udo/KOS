@@ -20,31 +20,39 @@ PRINT "2)       V(DEORBIT): " + VDEORBIT + " m/s".
 PRINT "3)  LANDING MODE AT: " + ALTLANDING + " m".
 PRINT "^   BRAKING MODE AT: " + ALTBRAKING + " m".
 
-// de-orbit systems prep and orientation change
+// *** de-orbit systems prep and orientation change ***
 IF( STAGE:READY ) STAGE.
+// retrograde orientation by SAS introduces inaccuracies and latencies
+// that are inacceptable for landing in low-grav (like Minmus), hence
+// we need to lock steering directly to the inverse of our movement vector:
 LOCK STEERING TO (-1) * SHIP:VELOCITY:SURFACE.
+// using minimal thrust to accelerate orientation change in craft with
+// underpowered reaction wheels:
 LOCK THROTTLE TO 0.1.
+// make sure landing gear is retracted 
 GEAR OFF.
+// retract solar panels for landing
 PANELS OFF.
 WAIT 3.
 
-// init de-orbit burn 
+// *** init de-orbit burn ***
 PRINT "RETRO BURN...".
 UNTIL SHIP:SURFACESPEED < VDEORBIT {
   LOCK THROTTLE TO 1.
   WAIT 1.
 } 
 
-// going into descent mode
+// *** going into descent mode ***
 PRINT "DESCENDING...".
 SAS ON.
 SET T TO 0.
 LOCK THROTTLE TO T.
 WAIT 3.
 
-// descent control loop
+// *** descent control loop ***
 SET SASMODE TO "STABILITY".
 SET MODE TO "". SET LMODE TO "".
+
 UNTIL ALT:RADAR < ALTOFFSET {
  
   SET DV TO 0.
